@@ -2,42 +2,10 @@
 //공연료와 별개로 포인트 지급
 //다음 의뢰시 공연료 할인 받을 수 있음
 
+import createStatementData from "./createStatementData";
+
 function statement(invoice, plays) {
-  const statementData = {};
-  statementData.customer = invoice.customer;
-  statementData.performances = invoice.performances.map(enrichPerformance);
-  return renderPlainText(statementData, plays);
-  function enrichPerformance(aPerformance) {
-    //얕은복사 수행
-    const result = Object.assign({}, aPerformance);
-    result.play = playFor(result);
-    result.amount = amountFor(result);
-    return result;
-  }
-  function playFor(aPerformance) {
-    return plays[aPerformance.playID];
-  }
-  function amountFor(aPerformance) {
-    let result = 0;
-    switch (aPerformance.play.type) {
-      case "tragedy":
-        result = 40000;
-        if (aPerformance.audience > 30) {
-          result += 1000 * (aPerformance.audience - 30);
-        }
-        break;
-      case "comedy":
-        result = 30000;
-        if (aPerformance.audience > 20) {
-          result += 10000 + 500 * (aPerformance.audience - 20);
-        }
-        result += 300 * aPerformance.audience;
-        break;
-      default:
-        throw new Error(`알 수 없는 장르: ${aPerformance.play.type}`);
-    }
-    return result;
-  }
+  return renderPlainText(createStatementData(invoice, plays));
 }
 
 function renderPlainText(data, plays) {
@@ -47,7 +15,7 @@ function renderPlainText(data, plays) {
     result += ` ${perf.play.name}: ${usd(perf.amount)} (${perf.audience}석)\n`;
   }
   result += `총액: ${usd(totalAmount())}\n`;
-  result += `적립 포인트 : ${totalVolumeCredits()}점\n`;
+  result += `적립 포인트 : ${data.totalVolumeCredits()}점\n`;
   return result;
 
   function volumeCreditsFor(perf) {
@@ -72,6 +40,12 @@ function renderPlainText(data, plays) {
     return data.performances.reduce((total, p) => total + p.amount, 0);
   }
 }
+
+function htmlStatement(invoice, plays) {
+  return renderHtml(createStatementData(invoice, plays));
+}
+
+
 
 //결과 화면
 //청구내역 (고객명 : BigCo)
